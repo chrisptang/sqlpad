@@ -38,6 +38,20 @@ async function create(req, res) {
     userId: user.id,
   };
 
+  //disable 'drop table' and 'drop database' operations for non-admin user
+  //by derrick.tang
+  let lowerBatch = batchText.toLowerCase();
+  if (lowerBatch.indexOf('drop table') >= 0
+    || lowerBatch.indexOf("drop database") >= 0
+    || lowerBatch.indexOf("drop schema") >= 0) {
+    if (req.user.role !== 'admin') {
+      appLog.error(`statement is not allowed:${batchText} for user:${user.id} and its role:${user.role}`);
+      return res.utils.data({ status: 'error', error: { title: `You are not allowed to run this statement:${batchText}` } });
+    } else {
+      console.warn(`${user.id} is performing dangerous statement:${batchText}`);
+    }
+  }
+
   const connection = await models.connections.findOneById(connectionId);
   const newBatch = await models.batches.create(batch);
 

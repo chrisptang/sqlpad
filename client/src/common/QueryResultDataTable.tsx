@@ -142,10 +142,12 @@ interface QueryResultDataTableProps {
 
 interface QueryResultDataTableState {
   cellModalVisible: boolean;
+  rowModalVisible: boolean;
   contextTop: number;
   contextLeft: number;
   cellColumnName: string;
   cellCopyValue: string;
+  rowCopyValue: string;
   dimensions: {
     width: number;
     height: number;
@@ -162,10 +164,12 @@ class QueryResultDataTable extends React.PureComponent<
 > {
   state: QueryResultDataTableState = {
     cellModalVisible: false,
+    rowModalVisible: false,
     contextTop: 0,
     contextLeft: 0,
     cellColumnName: '',
     cellCopyValue: '',
+    rowCopyValue: '',
     dimensions: {
       width: -1,
       height: -1,
@@ -359,6 +363,7 @@ class QueryResultDataTable extends React.PureComponent<
         <pre
           data-is-cell="true"
           data-column-name={column.name}
+          data-row-index={rowIndex}
           className={scrollboxClass}
           style={finalStyle}
         >
@@ -415,9 +420,13 @@ class QueryResultDataTable extends React.PureComponent<
     // target needs casting as no way of knowing what it is
     const target = event.target as HTMLDivElement;
 
+    const {rows} = this.props;
+
     const cellCopyValue = target.innerText || '';
     const isCell = target.getAttribute('data-is-cell');
     const cellColumnName = target.getAttribute('data-column-name') || '';
+    const rowIndex = target.getAttribute('data-row-index') || '0';
+    const rowCopyValue = JSON.stringify(rows?.[Number.parseInt(rowIndex)]);
 
     if (isCell === 'true' && cellCopyValue) {
       event.preventDefault();
@@ -425,6 +434,7 @@ class QueryResultDataTable extends React.PureComponent<
       this.setState({
         cellColumnName,
         cellCopyValue,
+        rowCopyValue,
         contextTop: event.clientY,
         contextLeft: event.clientX,
       });
@@ -438,11 +448,13 @@ class QueryResultDataTable extends React.PureComponent<
     }
   };
 
-  handleCellModalClose = () => {
+  handleModalClose = () => {
     this.setState({
       cellModalVisible: false,
+      rowModalVisible: false,
       cellColumnName: '',
       cellCopyValue: '',
+      rowCopyValue: '',
     });
   };
 
@@ -450,8 +462,10 @@ class QueryResultDataTable extends React.PureComponent<
     const { columns, rows } = this.props;
     const {
       cellModalVisible,
+      rowModalVisible,
       cellColumnName,
       cellCopyValue,
+      rowCopyValue,
       contextLeft,
       contextTop,
     } = this.state;
@@ -542,10 +556,17 @@ class QueryResultDataTable extends React.PureComponent<
                     <CopyMenuItem id="#cell-copy-value" value={cellCopyValue} />
                     <MenuItem
                       onSelect={() => {
+                        this.setState({ rowModalVisible: true });
+                      }}
+                    >
+                      View row expanded value
+                    </MenuItem>
+                    <MenuItem
+                      onSelect={() => {
                         this.setState({ cellModalVisible: true });
                       }}
                     >
-                      View expanded value
+                      View colume expanded value
                     </MenuItem>
                   </MenuItems>
                 </MenuPopover>
@@ -555,10 +576,20 @@ class QueryResultDataTable extends React.PureComponent<
                 title={cellColumnName}
                 width="fit-content"
                 visible={cellModalVisible}
-                onClose={this.handleCellModalClose}
+                onClose={this.handleModalClose}
               >
-                <pre style={{ fontSize: '14px', color: '#000' }}>
+                <pre style={{ fontSize: '14px', color: '#000', whiteSpace: 'pre-wrap' }}>
                   {cellCopyValue}
+                </pre>
+              </Modal>
+              <Modal
+                title="Row view"
+                width="fit-content"
+                visible={rowModalVisible}
+                onClose={this.handleModalClose}
+              >
+                <pre style={{ fontSize: '14px', color: '#000', whiteSpace: 'pre-wrap' }}>
+                  {rowCopyValue}
                 </pre>
               </Modal>
             </div>

@@ -439,12 +439,14 @@ export const runQuery = async () => {
   if (error) {
     return setSession(focusedSessionId, {
       queryError: error,
+      isRunning: false,
     });
   }
 
-  if (!batch) {
+  if (!batch || batch?.status === 'error') {
     return setSession(focusedSessionId, {
-      queryError: 'error creating batch',
+      queryError: 'error creating batch:'+batch?.error?.title,
+      isRunning: false,
     });
   }
 
